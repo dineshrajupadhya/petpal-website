@@ -6,11 +6,52 @@ import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Admin: Get all orders
+router.get('/admin/all', requireAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, search } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (search) {
+      filter.$or = [
+        { orderNumber: new RegExp(search, 'i') },
+        { 'shippingAddress.name': new RegExp(search, 'i') }
+      ];
+    }
+
+    const orders = await Order.find(filter)
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Order.countDocuments(filter);
+
+    res.json({
+      orders,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Get admin orders error:', error);
+    res.status(500).json({
+      message: 'Failed to fetch orders',
+      error: error.message
+    });
+  }
+});
+
 // Get user's orders
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
-    
+
     const filter = { userId: req.user._id };
     if (status) filter.status = status;
 
@@ -34,9 +75,9 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Get orders error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch orders', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Failed to fetch orders',
+      error: error.message
     });
   }
 });
@@ -209,47 +250,6 @@ router.put('/:id/cancel', async (req, res) => {
     console.error('Cancel order error:', error);
     res.status(500).json({ 
       message: 'Failed to cancel order', 
-      error: error.message 
-    });
-  }
-});
-
-// Admin: Get all orders
-router.get('/admin/all', requireAdmin, async (req, res) => {
-  try {
-    const { page = 1, limit = 20, status, search } = req.query;
-    
-    const filter = {};
-    if (status) filter.status = status;
-    if (search) {
-      filter.$or = [
-        { orderNumber: new RegExp(search, 'i') },
-        { 'shippingAddress.name': new RegExp(search, 'i') }
-      ];
-    }
-
-    const orders = await Order.find(filter)
-      .populate('userId', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await Order.countDocuments(filter);
-
-    res.json({
-      orders,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
-        totalItems: total,
-        hasNext: page * limit < total,
-        hasPrev: page > 1
-      }
-    });
-  } catch (error) {
-    console.error('Get admin orders error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch orders', 
       error: error.message 
     });
   }

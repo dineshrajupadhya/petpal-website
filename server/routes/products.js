@@ -4,6 +4,56 @@ import { authenticateToken, requireAdmin, optionalAuth } from '../middleware/aut
 
 const router = express.Router();
 
+// Get product categories
+router.get('/meta/categories', async (req, res) => {
+  try {
+    const categories = await Product.distinct('category');
+    const brands = await Product.distinct('brand');
+
+    res.json({ categories, brands });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({
+      message: 'Failed to fetch categories',
+      error: error.message
+    });
+  }
+});
+
+// Get product statistics (Admin only)
+router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+          inactive: { $sum: { $cond: [{ $eq: ['$status', 'inactive'] }, 1, 0] } },
+          lowStock: { $sum: { $cond: [{ $lte: ['$inventory.stock', '$inventory.lowStockThreshold'] }, 1, 0] } },
+          totalValue: { $sum: { $multiply: ['$price', '$inventory.stock'] } }
+        }
+      }
+    ]);
+
+    const categoryStats = await Product.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({
+      overview: stats[0] || { total: 0, active: 0, inactive: 0, lowStock: 0, totalValue: 0 },
+      byCategory: categoryStats
+    });
+  } catch (error) {
+    console.error('Product stats error:', error);
+    res.status(500).json({
+      message: 'Failed to fetch product statistics',
+      error: error.message
+    });
+  }
+});
+
 // Get all products with filtering and pagination
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -25,12 +75,12 @@ router.get('/', optionalAuth, async (req, res) => {
 
     // Build filter object
     const filter = { status };
-    
+
     if (category) filter.category = category;
     if (brand) filter.brand = new RegExp(brand, 'i');
     if (featured !== undefined) filter.featured = featured === 'true';
     if (inStock === 'true') filter['inventory.stock'] = { $gt: 0 };
-    
+
     // Price filtering
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -75,9 +125,9 @@ router.get('/', optionalAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch products', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Failed to fetch products',
+      error: error.message
     });
   }
 });
@@ -216,56 +266,6 @@ router.post('/:id/reviews', authenticateToken, async (req, res) => {
     console.error('Add review error:', error);
     res.status(500).json({ 
       message: 'Failed to add review', 
-      error: error.message 
-    });
-  }
-});
-
-// Get product categories
-router.get('/meta/categories', async (req, res) => {
-  try {
-    const categories = await Product.distinct('category');
-    const brands = await Product.distinct('brand');
-    
-    res.json({ categories, brands });
-  } catch (error) {
-    console.error('Get categories error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch categories', 
-      error: error.message 
-    });
-  }
-});
-
-// Get product statistics (Admin only)
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const stats = await Product.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
-          inactive: { $sum: { $cond: [{ $eq: ['$status', 'inactive'] }, 1, 0] } },
-          lowStock: { $sum: { $cond: [{ $lte: ['$inventory.stock', '$inventory.lowStockThreshold'] }, 1, 0] } },
-          totalValue: { $sum: { $multiply: ['$price', '$inventory.stock'] } }
-        }
-      }
-    ]);
-
-    const categoryStats = await Product.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    res.json({
-      overview: stats[0] || { total: 0, active: 0, inactive: 0, lowStock: 0, totalValue: 0 },
-      byCategory: categoryStats
-    });
-  } catch (error) {
-    console.error('Product stats error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch product statistics', 
       error: error.message 
     });
   }
