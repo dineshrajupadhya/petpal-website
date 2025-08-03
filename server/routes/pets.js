@@ -4,6 +4,39 @@ import { authenticateToken, requireAdmin, optionalAuth } from '../middleware/aut
 
 const router = express.Router();
 
+// Get pet statistics (Admin only)
+router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stats = await Pet.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } },
+          adopted: { $sum: { $cond: [{ $eq: ['$status', 'adopted'] }, 1, 0] } },
+          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const speciesStats = await Pet.aggregate([
+      { $group: { _id: '$species', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({
+      overview: stats[0] || { total: 0, available: 0, adopted: 0, pending: 0 },
+      bySpecies: speciesStats
+    });
+  } catch (error) {
+    console.error('Pet stats error:', error);
+    res.status(500).json({
+      message: 'Failed to fetch pet statistics',
+      error: error.message
+    });
+  }
+});
+
 // Get all pets with filtering and pagination
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -25,7 +58,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     // Build filter object
     const filter = { status };
-    
+
     if (species) filter.species = species;
     if (breed) filter.breed = new RegExp(breed, 'i');
     if (gender) filter.gender = gender;
@@ -37,7 +70,7 @@ router.get('/', optionalAuth, async (req, res) => {
       ];
     }
     if (featured !== undefined) filter.featured = featured === 'true';
-    
+
     // Age filtering
     if (age) {
       if (age === 'young') filter.age = { $lte: 2 };
@@ -77,9 +110,9 @@ router.get('/', optionalAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get pets error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch pets', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Failed to fetch pets',
+      error: error.message
     });
   }
 });
@@ -216,39 +249,6 @@ router.post('/:id/inquire', authenticateToken, async (req, res) => {
     console.error('Adoption inquiry error:', error);
     res.status(500).json({ 
       message: 'Failed to submit inquiry', 
-      error: error.message 
-    });
-  }
-});
-
-// Get pet statistics (Admin only)
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const stats = await Pet.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } },
-          adopted: { $sum: { $cond: [{ $eq: ['$status', 'adopted'] }, 1, 0] } },
-          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } }
-        }
-      }
-    ]);
-
-    const speciesStats = await Pet.aggregate([
-      { $group: { _id: '$species', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    res.json({
-      overview: stats[0] || { total: 0, available: 0, adopted: 0, pending: 0 },
-      bySpecies: speciesStats
-    });
-  } catch (error) {
-    console.error('Pet stats error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch pet statistics', 
       error: error.message 
     });
   }
