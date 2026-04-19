@@ -7,6 +7,8 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB, { connection } from './config/database.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
 import petRoutes from './routes/pets.js';
@@ -22,6 +24,9 @@ import { setupSocketHandlers } from './socket/socketHandlers.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
@@ -32,7 +37,6 @@ const io = new Server(server, {
   }
 });
 
-
 connectDB()
   .then(() => {
     console.log('✅ Database connection established');
@@ -41,9 +45,20 @@ connectDB()
     console.log('⚠️ Database connection failed, continuing with mock data');
   });
 
-
-app.use(helmet());
-
+// Use helmet but configure it to allow loading resources from the same origin when serving static files
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.cloudinary.com"],
+      },
+    },
+  })
+);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -51,9 +66,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-
 app.use(morgan('dev'));
-
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -62,7 +75,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pets', petRoutes);
@@ -73,19 +85,24 @@ app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'PetPal API is running' });
 });
 
-
 setupSocketHandlers(io);
 
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
+  });
+} else {
+  app.use((req, res) => {
+    res.status(404).json({ message: 'Route not found' });
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -101,7 +118,6 @@ server.listen(PORT, () => {
   console.log(` Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
   console.log(`  Mode: ${process.env.NODE_ENV || 'development'}`);
 });
-
 
 process.on('SIGINT', async () => {
   console.log('\n Gracefully shutting down...');
