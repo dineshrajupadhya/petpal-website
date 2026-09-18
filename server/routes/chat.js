@@ -84,7 +84,6 @@ router.post('/session/:sessionId/message', async (req, res) => {
       timestamp: new Date()
     };
 
-    // Add metadata for admin messages
     if (sender === 'admin') {
       newMessage.metadata = { adminId: req.user._id };
     }
@@ -94,16 +93,16 @@ router.post('/session/:sessionId/message', async (req, res) => {
 
     await chat.save();
 
-    // Generate bot response if user message
+    // Generate AI response if user message
     if (sender === 'user') {
-      const botResponse = generateBotResponse(message);
+      const aiResponse = await generateAIResponse(chat.messages);
       
       chat.messages.push({
         sender: 'bot',
-        message: botResponse,
+        message: aiResponse,
         timestamp: new Date(),
         metadata: {
-          botConfidence: 0.8,
+          botConfidence: 0.9,
           intent: detectIntent(message)
         }
       });
@@ -232,6 +231,70 @@ router.put('/admin/session/:id', requireAdmin, async (req, res) => {
 });
 
 // Helper functions
+const PETPAL_SYSTEM_PROMPT = `You are PetPal's AI pet care assistant. You are friendly, knowledgeable, and genuinely helpful about all things pets.
+
+Your expertise covers:
+- Pet adoption guidance (helping users find the right pet, explaining the adoption process)
+- Pet health advice (symptoms, when to see a vet, general care tips — but always recommend professional vet care for serious concerns)
+- Pet nutrition (food recommendations, dietary needs by species/breed/age)
+- Product recommendations from the PetPal store
+- Pet behavior and training tips
+- Emergency guidance (always direct to emergency vet services for real emergencies)
+
+Rules:
+- Keep responses concise but warm and helpful (2-4 sentences typically)
+- Use a friendly, conversational tone
+- Always recommend consulting a veterinarian for health concerns
+- For emergencies, strongly urge immediate vet care
+- If you don't know something specific, say so honestly
+- Never make up medical diagnoses
+- You can reference PetPal's features: pet adoption, pet store, health guides`;
+
+async function generateAIResponse(messages) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    return generateBotResponse(messages[messages.length - 1]?.message || '');
+  }
+
+  try {
+    const conversationHistory = messages.slice(-10).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'assistant',
+      content: m.message
+    }));
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://petpal-platform.netlify.app',
+        'X-Title': 'PetPal Pet Care Assistant'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          { role: 'system', content: PETPAL_SYSTEM_PROMPT },
+          ...conversationHistory
+        ],
+        max_tokens: 300,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      console.error('OpenRouter API error:', response.status);
+      return generateBotResponse(messages[messages.length - 1]?.message || '');
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || generateBotResponse(messages[messages.length - 1]?.message || '');
+  } catch (error) {
+    console.error('AI response error:', error.message);
+    return generateBotResponse(messages[messages.length - 1]?.message || '');
+  }
+}
+
 function generateBotResponse(message) {
   const lowerMessage = message.toLowerCase();
   
