@@ -4,8 +4,3 @@
 
 [build.environment]
   VITE_API_URL = "https://petpal-api-ejwx.onrender.com"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
