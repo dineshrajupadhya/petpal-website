@@ -9,6 +9,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    localStorage.removeItem('petpal_token');
     dispatch({ type: 'SET_USER', payload: null });
     navigate('/');
   };

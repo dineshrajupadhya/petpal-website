@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { authAPI } from '../services/api';
 
 interface User {
   id: string;
@@ -69,14 +70,17 @@ interface AppState {
   }>;
 }
 
-type AppAction = 
+type AppAction =
   | { type: 'SET_USER'; payload: User | null }
   | { type: 'ADD_TO_CART'; payload: CartItem }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_CART_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'CLEAR_CART' }
   | { type: 'ADD_TO_WISHLIST'; payload: string }
   | { type: 'REMOVE_FROM_WISHLIST'; payload: string }
-  | { type: 'ADD_MESSAGE'; payload: { sender: 'user' | 'bot' | 'admin'; message: string } };
+  | { type: 'SET_WISHLIST'; payload: string[] }
+  | { type: 'ADD_MESSAGE'; payload: { sender: 'user' | 'bot' | 'admin'; message: string } }
+  | { type: 'SET_MESSAGES'; payload: Array<{ id: string; sender: 'user' | 'bot' | 'admin'; message: string; timestamp: Date }> };
 
 const initialState: AppState = {
   user: null,
@@ -97,7 +101,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_USER':
       return { ...state, user: action.payload };
-    case 'ADD_TO_CART':
+    case 'ADD_TO_CART': {
       const existingItem = state.cart.find(item => item.id === action.payload.id);
       if (existingItem) {
         return {
@@ -110,6 +114,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         };
       }
       return { ...state, cart: [...state.cart, action.payload] };
+    }
     case 'REMOVE_FROM_CART':
       return { ...state, cart: state.cart.filter(item => item.id !== action.payload) };
     case 'UPDATE_CART_QUANTITY':
@@ -121,10 +126,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
             : item
         )
       };
+    case 'CLEAR_CART':
+      return { ...state, cart: [] };
     case 'ADD_TO_WISHLIST':
       return { ...state, wishlist: [...state.wishlist, action.payload] };
     case 'REMOVE_FROM_WISHLIST':
       return { ...state, wishlist: state.wishlist.filter(id => id !== action.payload) };
+    case 'SET_WISHLIST':
+      return { ...state, wishlist: action.payload };
     case 'ADD_MESSAGE':
       return {
         ...state,
@@ -135,6 +144,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
           timestamp: new Date()
         }]
       };
+    case 'SET_MESSAGES':
+      return { ...state, chatMessages: action.payload };
     default:
       return state;
   }
@@ -142,6 +153,29 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    const token = localStorage.getItem('petpal_token');
+    if (token) {
+      authAPI.getMe()
+        .then(res => {
+          const u = res.data.user || res.data;
+          dispatch({
+            type: 'SET_USER',
+            payload: {
+              id: u._id || u.id,
+              name: u.name,
+              email: u.email,
+              avatar: u.avatar,
+              isAdmin: u.isAdmin,
+            }
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem('petpal_token');
+        });
+    }
+  }, []);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
