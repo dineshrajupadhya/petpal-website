@@ -49,11 +49,14 @@ export default function Chat() {
     setIsTyping(true);
 
     try {
-      await chatAPI.sendMessage(sessionId, userMessage, 'user');
       const res = await chatAPI.sendMessage(sessionId, userMessage, 'user');
-      const botMsg = res.data.botResponse || res.data.message;
-      if (botMsg) {
-        dispatch({ type: 'ADD_MESSAGE', payload: { sender: 'bot', message: botMsg } });
+      const chat = res.data.chat;
+      if (chat?.messages?.length > 0) {
+        const botMsgs = chat.messages.filter((m: Record<string, unknown>) => m.sender === 'bot');
+        const lastBot = botMsgs[botMsgs.length - 1];
+        if (lastBot) {
+          dispatch({ type: 'ADD_MESSAGE', payload: { sender: 'bot', message: lastBot.message as string } });
+        }
       }
     } catch {
       dispatch({ type: 'ADD_MESSAGE', payload: { sender: 'bot', message: "I'm here to help! Could you please rephrase your question?" } });
