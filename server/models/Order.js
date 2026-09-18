@@ -74,11 +74,15 @@ const orderSchema = new mongoose.Schema({
 
 // Generate order number before saving
 orderSchema.pre('save', async function(next) {
-  if (!this.orderNumber) {
-    const count = await mongoose.model('Order').countDocuments();
-    this.orderNumber = `ORD-${String(count + 1).padStart(6, '0')}`;
+  try {
+    if (!this.orderNumber) {
+      const count = await mongoose.model('Order').countDocuments();
+      this.orderNumber = `ORD-${String(count + 1).padStart(6, '0')}`;
+    }
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
 });
 
 // Indexes

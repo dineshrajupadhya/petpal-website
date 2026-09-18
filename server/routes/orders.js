@@ -136,29 +136,39 @@ router.post('/', async (req, res) => {
         if (item.quantity !== 1) {
           return res.status(400).json({ message: 'Pet adoption quantity must be 1' });
         }
+      } else {
+        itemData = await Product.findById(item.itemId);
+        if (!itemData) {
+          return res.status(400).json({ message: `Item ${item.itemId} not found` });
+        }
       }
 
-      const price = item.itemType === 'product' ? itemData.price : itemData.adoptionFee;
+      const price = item.itemType === 'product' ? itemData.price : (itemData.adoptionFee || itemData.price);
       const itemTotal = price * item.quantity;
       subtotal += itemTotal;
 
       orderItems.push({
         itemId: item.itemId,
-        itemType: item.itemType,
+        itemType: item.itemType || 'product',
         name: itemData.name,
         price: price,
         quantity: item.quantity,
-        image: itemData.primaryImage || itemData.images[0]?.url
+        image: itemData.primaryImage || itemData.images?.[0]?.url
       });
     }
 
     // Calculate tax and shipping
-    const tax = subtotal * 0.08; // 8% tax
+    const tax = subtotal * 0.08;
     const shipping = subtotal >= 35 ? 0 : 9.99;
     const total = subtotal + tax + shipping;
 
+    // Generate order number
+    const count = await Order.countDocuments();
+    const orderNumber = `ORD-${String(count + 1).padStart(6, '0')}`;
+
     // Create order
     const order = new Order({
+      orderNumber,
       userId: req.user._id,
       items: orderItems,
       pricing: {
