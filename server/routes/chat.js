@@ -272,7 +272,7 @@ async function generateAIResponse(messages) {
         'X-Title': 'PetPal Pet Care Assistant'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'deepseek/deepseek-chat-v3-0324',
         messages: [
           { role: 'system', content: PETPAL_SYSTEM_PROMPT },
           ...conversationHistory
