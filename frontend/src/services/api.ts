@@ -108,6 +108,14 @@ export const usersAPI = {
   adoptions: () => api.get('/users/adoptions'),
 };
 
+export const adoptionAPI = {
+  submit: (data: Record<string, unknown>) => api.post('/adoption-applications', data),
+  myApplications: () => api.get('/adoption-applications/my'),
+  adminAll: (params?: Record<string, string | number>) => api.get('/adoption-applications/admin/all', { params }),
+  updateStatus: (id: string, data: { status: string; adminNotes?: string }) => api.put(`/adoption-applications/${id}/status`, data),
+  withdraw: (id: string) => api.put(`/adoption-applications/${id}/withdraw`),
+};
+
 export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
   users: (params?: Record<string, string | number>) => api.get('/admin/users', { params }),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Heart, ShoppingBag, MessageCircle, Plus, Trash2, X } from 'lucide-react';
+import { Users, Heart, ShoppingBag, MessageCircle, Plus, Trash2, X, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { adminAPI, petsAPI, productsAPI, ordersAPI } from '../services/api';
+import { adminAPI, petsAPI, productsAPI, ordersAPI, adoptionAPI } from '../services/api';
 
 export default function Admin() {
   const { state } = useApp();
@@ -12,6 +12,7 @@ export default function Admin() {
   const [pets, setPets] = useState<Array<Record<string, unknown>>>([]);
   const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
   const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
+  const [adoptionApps, setAdoptionApps] = useState<Array<Record<string, unknown>>>([]);
   const [tabLoading, setTabLoading] = useState(false);
 
   const [showPetModal, setShowPetModal] = useState(false);
@@ -43,6 +44,11 @@ export default function Admin() {
     } else if (tab === 'orders') {
       ordersAPI.adminAll({ limit: 50 })
         .then(res => setOrders(res.data.orders || []))
+        .catch(() => {})
+        .finally(() => setTabLoading(false));
+    } else if (tab === 'adoptions') {
+      adoptionAPI.adminAll({ limit: 50 })
+        .then(res => setAdoptionApps(res.data.applications || []))
         .catch(() => {})
         .finally(() => setTabLoading(false));
     } else {
@@ -114,6 +120,13 @@ export default function Admin() {
     catch { alert('Failed to delete product'); }
   };
 
+  const handleUpdateAdoptionStatus = async (appId: string, newStatus: string, notes: string) => {
+    try {
+      await adoptionAPI.updateStatus(appId, { status: newStatus, adminNotes: notes });
+      setAdoptionApps(prev => prev.map(a => a._id === appId ? { ...a, status: newStatus } : a));
+    } catch { alert('Failed to update application status'); }
+  };
+
   if (!state.user?.isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
@@ -140,6 +153,7 @@ export default function Admin() {
     { id: 'pets', label: 'Pets', icon: Heart },
     { id: 'products', label: 'Products', icon: ShoppingBag },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
+    { id: 'adoptions', label: 'Applications', icon: FileText },
   ];
 
   const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm";
@@ -349,6 +363,67 @@ export default function Admin() {
     </div>
   );
 
+  const renderAdoptions = () => {
+    const statusColor = (s: string) => s === 'approved' ? 'bg-green-100 text-green-800 border-green-200'
+      : s === 'rejected' ? 'bg-red-100 text-red-800 border-red-200'
+      : s === 'under_review' ? 'bg-blue-100 text-blue-800 border-blue-200'
+      : s === 'withdrawn' ? 'bg-gray-100 text-gray-800 border-gray-200'
+      : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Adoption Applications</h2>
+        {tabLoading ? (
+          <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />)}</div>
+        ) : adoptionApps.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No applications yet</p>
+        ) : (
+          <div className="space-y-4">
+            {adoptionApps.map((app, i) => {
+              const pet = app.petId as Record<string, unknown> | undefined;
+              const user = app.userId as Record<string, unknown> | undefined;
+              const personal = (app.personalInfo || {}) as Record<string, unknown>;
+              const housing = (app.housing || {}) as Record<string, unknown>;
+              const experience = (app.experience || {}) as Record<string, unknown>;
+              const lifestyle = (app.lifestyle || {}) as Record<string, unknown>;
+              const petImages = pet ? ((pet.images || []) as Array<{ url: string }>) : [];
+              return (
+                <div key={i} className="border rounded-lg p-5 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      {petImages[0] && <img src={petImages[0].url} alt="" className="w-14 h-14 rounded-lg object-cover" />}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <p className="font-semibold text-gray-900">{pet?.name as string || 'Unknown Pet'} ({pet?.species as string})</p>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColor(app.status as string)}`}>
+                            {(app.status as string).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">Applicant: {personal.fullName as string} ({personal.email as string})</p>
+                        <p className="text-sm text-gray-600">Phone: {personal.phone as string} | Age: {personal.age as number}</p>
+                        <p className="text-sm text-gray-500 mt-1">Housing: {housing.type as string} ({housing.ownership as string}) | Yard: {(housing.hasYard as boolean) ? 'Yes' : 'No'}</p>
+                        <p className="text-sm text-gray-500">Pets before: {(experience.hasPets as boolean) ? `Yes — ${experience.currentPets}` : 'No'} | Hours away: {lifestyle.hoursAwayFromHome as string}</p>
+                        <p className="text-xs text-gray-400 mt-1">Applied: {new Date(app.createdAt as string).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <select value={app.status as string} onChange={(e) => handleUpdateAdoptionStatus(app._id as string, e.target.value, '')}
+                        className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        <option value="pending">Pending</option>
+                        <option value="under_review">Under Review</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -378,6 +453,7 @@ export default function Admin() {
                 {activeTab === 'pets' && renderPets()}
                 {activeTab === 'products' && renderProducts()}
                 {activeTab === 'orders' && renderOrders()}
+                {activeTab === 'adoptions' && renderAdoptions()}
               </>
             )}
           </div>

@@ -16,6 +16,7 @@ import orderRoutes from './routes/orders.js';
 import chatRoutes from './routes/chat.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
+import adoptionApplicationRoutes from './routes/adoptionApplications.js';
 
 import { authenticateToken } from './middleware/auth.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
@@ -72,6 +73,7 @@ app.use('/api/orders', authenticateToken, orderRoutes);
 app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/adoption-applications', adoptionApplicationRoutes);
 
 
 app.get('/api/health', (req, res) => {
