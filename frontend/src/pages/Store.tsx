@@ -124,9 +124,9 @@ export default function Store() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-lg font-bold text-gray-900">${(product.price as number)?.toFixed(2)}</span>
+                        <span className="text-lg font-bold text-gray-900">₹{(product.price as number)?.toFixed(2)}</span>
                         {(product.originalPrice as number) && (product.originalPrice as number) > (product.price as number) && (
-                          <span className="text-sm text-gray-500 line-through">${(product.originalPrice as number)?.toFixed(2)}</span>
+                          <span className="text-sm text-gray-500 line-through">₹{(product.originalPrice as number)?.toFixed(2)}</span>
                         )}
                       </div>
                     </div>

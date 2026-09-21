@@ -128,12 +128,12 @@ export default function ProductDetails() {
                 <span className="text-gray-600 ml-2">{(rating.average || 0).toFixed(1)} ({rating.count || 0} reviews)</span>
               </div>
               <div className="flex items-center space-x-4 mb-6">
-                <span className="text-3xl font-bold text-gray-900">${(p.price as number)?.toFixed(2)}</span>
+                <span className="text-3xl font-bold text-gray-900">₹{(p.price as number)?.toFixed(2)}</span>
                 {(p.originalPrice as number) && (p.originalPrice as number) > (p.price as number) && (
                   <>
-                    <span className="text-xl text-gray-500 line-through">${(p.originalPrice as number)?.toFixed(2)}</span>
+                    <span className="text-xl text-gray-500 line-through">₹{(p.originalPrice as number)?.toFixed(2)}</span>
                     <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                      Save ${((p.originalPrice as number) - (p.price as number)).toFixed(2)}
+                      Save ₹{((p.originalPrice as number) - (p.price as number)).toFixed(2)}
                     </span>
                   </>
                 )}
@@ -162,7 +162,7 @@ export default function ProductDetails() {
 
                 <div className="space-y-4">
                   <button onClick={addToCart} className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-lg flex items-center justify-center space-x-2">
-                    <ShoppingCart className="w-5 h-5" /><span>Add to Cart - ${((p.price as number || 0) * quantity).toFixed(2)}</span>
+                    <ShoppingCart className="w-5 h-5" /><span>Add to Cart - ₹{((p.price as number || 0) * quantity).toFixed(2)}</span>
                   </button>
                 </div>
               </>
@@ -185,7 +185,7 @@ export default function ProductDetails() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-sm">
                 <Truck className="w-6 h-6 text-blue-600" />
-                <div><div className="font-medium text-gray-900">Free Shipping</div><div className="text-sm text-gray-600">Orders over $35</div></div>
+                <div><div className="font-medium text-gray-900">Free Shipping</div><div className="text-sm text-gray-600">Orders over ₹2,999</div></div>
               </div>
               <div className="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-sm">
                 <Shield className="w-6 h-6 text-green-600" />

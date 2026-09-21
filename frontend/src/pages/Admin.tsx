@@ -205,7 +205,7 @@ export default function Admin() {
                 <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">#{order.orderNumber as string}</p>
-                    <p className="text-sm text-gray-600">${((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">₹{((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${orderStatusColor}`}>
                     {String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)}
@@ -252,7 +252,7 @@ export default function Admin() {
                     <td className="py-3 px-4 text-gray-600">{pet.species as string}</td>
                     <td className="py-3 px-4 text-gray-600">{pet.breed as string}</td>
                     <td className="py-3 px-4 text-gray-600">{pet.age as number} yr</td>
-                    <td className="py-3 px-4 text-gray-600">${pet.adoptionFee as number}</td>
+                    <td className="py-3 px-4 text-gray-600">₹{pet.adoptionFee as number}</td>
                     <td className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${pet.status === 'available' ? 'bg-green-100 text-green-800' : pet.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>{pet.status as string}</span></td>
                     <td className="py-3 px-4"><button onClick={() => handleDeletePet(pet._id as string)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button></td>
                   </tr>
@@ -297,7 +297,7 @@ export default function Admin() {
                     <td className="py-3 px-4"><div className="flex items-center space-x-3">{images[0] && <img src={images[0].url} alt="" className="w-10 h-10 rounded-lg object-cover" />}<span className="font-medium">{prod.name as string}</span></div></td>
                     <td className="py-3 px-4 text-gray-600">{prod.category as string}</td>
                     <td className="py-3 px-4 text-gray-600">{prod.brand as string}</td>
-                    <td className="py-3 px-4 text-gray-600">${prod.price as number}</td>
+                    <td className="py-3 px-4 text-gray-600">₹{prod.price as number}</td>
                     <td className="py-3 px-4"><span className={`font-medium ${stock < 10 ? 'text-red-600' : 'text-green-600'}`}>{stock}</span></td>
                     <td className="py-3 px-4"><button onClick={() => handleDeleteProduct(prod._id as string)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button></td>
                   </tr>
@@ -340,7 +340,7 @@ export default function Admin() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600">Customer: {user?.name || 'Unknown'} ({user?.email || ''})</p>
-                    <p className="text-sm text-gray-600">{items.length} item(s) — Total: ${pricing?.total?.toFixed(2) || '0.00'}</p>
+                    <p className="text-sm text-gray-600">{items.length} item(s) — Total: ₹{pricing?.total?.toFixed(2) || '0.00'}</p>
                     <p className="text-xs text-gray-500 mt-1">{new Date(order.createdAt as string).toLocaleDateString()}</p>
                   </div>
                   <div className="flex flex-col items-end space-y-2">
@@ -477,7 +477,7 @@ export default function Admin() {
               <div><label className={labelClass}>Size</label><select className={inputClass} value={petForm.size} onChange={e => setPetForm({...petForm, size: e.target.value})}><option>Small</option><option>Medium</option><option>Large</option></select></div>
               <div><label className={labelClass}>Weight</label><input className={inputClass} value={petForm.weight} onChange={e => setPetForm({...petForm, weight: e.target.value})} placeholder="e.g. 25 lbs" /></div>
               <div><label className={labelClass}>Color</label><input className={inputClass} value={petForm.color} onChange={e => setPetForm({...petForm, color: e.target.value})} /></div>
-              <div><label className={labelClass}>Adoption Fee ($)</label><input type="number" className={inputClass} value={petForm.adoptionFee} onChange={e => setPetForm({...petForm, adoptionFee: e.target.value})} /></div>
+              <div><label className={labelClass}>Adoption Fee (₹)</label><input type="number" className={inputClass} value={petForm.adoptionFee} onChange={e => setPetForm({...petForm, adoptionFee: e.target.value})} /></div>
               <div><label className={labelClass}>Image URL</label><input className={inputClass} value={petForm.image} onChange={e => setPetForm({...petForm, image: e.target.value})} placeholder="https://..." /></div>
               <div className="col-span-2"><label className={labelClass}>Description</label><textarea className={inputClass} rows={3} value={petForm.description} onChange={e => setPetForm({...petForm, description: e.target.value})} /></div>
               <div><label className={labelClass}>Shelter</label><input className={inputClass} value={petForm.shelter} onChange={e => setPetForm({...petForm, shelter: e.target.value})} /></div>
@@ -512,8 +512,8 @@ export default function Admin() {
               <div className="col-span-2"><label className={labelClass}>Name *</label><input className={inputClass} value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} /></div>
               <div><label className={labelClass}>Category *</label><select className={inputClass} value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})}><option>Food</option><option>Toys</option><option>Beds</option><option>Accessories</option><option>Health</option></select></div>
               <div><label className={labelClass}>Brand</label><input className={inputClass} value={productForm.brand} onChange={e => setProductForm({...productForm, brand: e.target.value})} /></div>
-              <div><label className={labelClass}>Price ($) *</label><input type="number" step="0.01" className={inputClass} value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} /></div>
-              <div><label className={labelClass}>Original Price ($)</label><input type="number" step="0.01" className={inputClass} value={productForm.originalPrice} onChange={e => setProductForm({...productForm, originalPrice: e.target.value})} /></div>
+              <div><label className={labelClass}>Price (₹) *</label><input type="number" className={inputClass} value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} /></div>
+              <div><label className={labelClass}>Original Price (₹)</label><input type="number" className={inputClass} value={productForm.originalPrice} onChange={e => setProductForm({...productForm, originalPrice: e.target.value})} /></div>
               <div><label className={labelClass}>Stock *</label><input type="number" className={inputClass} value={productForm.stock} onChange={e => setProductForm({...productForm, stock: e.target.value})} /></div>
               <div><label className={labelClass}>Image URL</label><input className={inputClass} value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} placeholder="https://..." /></div>
               <div className="col-span-2"><label className={labelClass}>Description *</label><textarea className={inputClass} rows={3} value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} /></div>

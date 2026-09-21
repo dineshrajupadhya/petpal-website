@@ -173,7 +173,7 @@ export default function Adoption() {
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-xl font-bold text-gray-900">{pet.name}</h3>
-                    <span className="text-lg font-semibold text-blue-600">${pet.adoptionFee}</span>
+                    <span className="text-lg font-semibold text-blue-600">₹{pet.adoptionFee}</span>
                   </div>
                   <p className="text-gray-600 mb-4">{pet.breed}</p>
                   <div className="space-y-2 mb-4">

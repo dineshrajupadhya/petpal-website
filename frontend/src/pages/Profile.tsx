@@ -186,7 +186,7 @@ export default function Profile() {
                         <p className="text-sm text-gray-500">{new Date(order.createdAt as string).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">${((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
+                        <p className="font-semibold text-gray-900">₹{((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                           order.status === 'cancelled' ? 'bg-red-100 text-red-800' :

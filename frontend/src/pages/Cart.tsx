@@ -105,8 +105,8 @@ export default function Cart() {
                           <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)} className="p-1 hover:bg-gray-100 rounded transition-colors"><Plus className="w-4 h-4" /></button>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">${(getItemPrice(item) * cartItem.quantity).toFixed(2)}</p>
-                          <p className="text-sm text-gray-500">${getItemPrice(item).toFixed(2)} each</p>
+                          <p className="font-semibold text-gray-900">₹{(getItemPrice(item) * cartItem.quantity).toFixed(2)}</p>
+                          <p className="text-sm text-gray-500">₹{getItemPrice(item).toFixed(2)} each</p>
                         </div>
                         <button onClick={() => removeItem(cartItem.id)} className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
                       </div>
@@ -121,16 +121,16 @@ export default function Cart() {
             <div className="bg-white rounded-xl shadow-md p-6 sticky top-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">${subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="font-medium">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span></div>
-                <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">${tax.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">₹{subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="font-medium">{shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">₹{tax.toFixed(2)}</span></div>
                 <div className="border-t pt-4">
-                  <div className="flex justify-between"><span className="text-lg font-semibold text-gray-900">Total</span><span className="text-lg font-semibold text-gray-900">${total.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-lg font-semibold text-gray-900">Total</span><span className="text-lg font-semibold text-gray-900">₹{total.toFixed(2)}</span></div>
                 </div>
               </div>
               {shipping > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-blue-800 text-sm">Add ${(35 - subtotal).toFixed(2)} more to get free shipping!</p>
+                  <p className="text-blue-800 text-sm">Add ₹{(2999 - subtotal).toFixed(2)} more to get free shipping!</p>
                 </div>
               )}
               <button onClick={handleCheckout} disabled={checkingOut}

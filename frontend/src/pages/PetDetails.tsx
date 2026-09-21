@@ -232,7 +232,7 @@ export default function PetDetails() {
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-4xl font-bold text-gray-900">{p.name as string}</h1>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600">${p.adoptionFee as number}</div>
+                  <div className="text-2xl font-bold text-blue-600">₹{p.adoptionFee as number}</div>
                   <div className="text-sm text-gray-500">Adoption Fee</div>
                 </div>
               </div>

@@ -97,12 +97,12 @@ const seedPets = async (users) => {
           url: 'https://images.pexels.com/photos/1254140/pexels-photo-1254140.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
         }],
-        adoptionFee: 250,
+        adoptionFee: 5000,
         location: {
           shelter: 'Happy Tails Animal Shelter',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001'
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          zipCode: '400001'
         },
         healthInfo: {
           vaccinated: true,
@@ -129,12 +129,12 @@ const seedPets = async (users) => {
           url: 'https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
         }],
-        adoptionFee: 150,
+        adoptionFee: 3000,
         location: {
           shelter: 'Feline Friends Rescue',
-          city: 'Los Angeles',
-          state: 'CA',
-          zipCode: '90210'
+          city: 'Bangalore',
+          state: 'Karnataka',
+          zipCode: '560001'
         },
         healthInfo: {
           vaccinated: true,
@@ -161,12 +161,12 @@ const seedPets = async (users) => {
           url: 'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
         }],
-        adoptionFee: 200,
+        adoptionFee: 4000,
         location: {
           shelter: 'Second Chance Animal Rescue',
-          city: 'Chicago',
-          state: 'IL',
-          zipCode: '60601'
+          city: 'Delhi',
+          state: 'Delhi',
+          zipCode: '110001'
         },
         healthInfo: {
           vaccinated: true,
@@ -200,8 +200,8 @@ const seedProducts = async (users) => {
         description: 'High-quality dry dog food made with real chicken as the first ingredient.',
         category: 'Food',
         brand: 'PetNutrition',
-        price: 49.99,
-        originalPrice: 59.99,
+        price: 2499,
+        originalPrice: 3299,
         images: [{
           url: 'https://images.pexels.com/photos/4498135/pexels-photo-4498135.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
@@ -227,7 +227,7 @@ const seedProducts = async (users) => {
         description: 'Engaging feather wand toy to keep your cat active and entertained.',
         category: 'Toys',
         brand: 'PlayTime',
-        price: 15.99,
+        price: 699,
         images: [{
           url: 'https://images.pexels.com/photos/1404819/pexels-photo-1404819.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
@@ -252,7 +252,7 @@ const seedProducts = async (users) => {
         description: 'Orthopedic pet bed with memory foam for maximum comfort.',
         category: 'Beds',
         brand: 'ComfortPet',
-        price: 79.99,
+        price: 3999,
         images: [{
           url: 'https://images.pexels.com/photos/1458925/pexels-photo-1458925.jpeg?auto=compress&cs=tinysrgb&w=800',
           isPrimary: true
