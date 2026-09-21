@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, MapPin, Calendar, Users, CheckCircle, Phone, Mail } from 'lucide-react';
 import { petsAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 export default function PetDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { state } = useApp();
   const [pet, setPet] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [inquirySent, setInquirySent] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +60,19 @@ export default function PetDetails() {
   const personality = (p.personality || []) as string[];
   const medHistory = (p.healthInfo as { medicalHistory?: string[] })?.medicalHistory || [];
   const requirements = (p.adoptionRequirements || []) as string[];
+
+  const handleAdopt = async () => {
+    if (!state.user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await petsAPI.inquire(id!, `I'm interested in adopting ${p.name}`);
+      setInquirySent(true);
+    } catch {
+      alert('Failed to submit inquiry. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -150,9 +167,15 @@ export default function PetDetails() {
             </div>
 
             <div className="space-y-4">
-              <button className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-lg">
-                Start Adoption Process
-              </button>
+              {inquirySent ? (
+                <div className="w-full bg-green-100 text-green-800 py-4 rounded-xl font-semibold text-center text-lg">
+                  Inquiry Sent! We'll get back to you soon.
+                </div>
+              ) : (
+                <button onClick={handleAdopt} className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-lg">
+                  Start Adoption Process
+                </button>
+              )}
             </div>
           </div>
         </div>
