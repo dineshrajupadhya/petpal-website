@@ -180,19 +180,25 @@ export default function Admin() {
         <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
           <div className="space-y-3">
-            {recentOrders.length > 0 ? recentOrders.map((order: Record<string, unknown>, i: number) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">#{order.orderNumber as string}</p>
-                  <p className="text-sm text-gray-600">${((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
+            {recentOrders.length > 0 ? recentOrders.map((order: Record<string, unknown>, i: number) => {
+              const orderStatusColor = order.status === 'delivered' ? 'bg-green-100 text-green-800'
+                : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
+                : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
+                : order.status === 'confirmed' ? 'bg-purple-100 text-purple-800'
+                : order.status === 'processing' ? 'bg-orange-100 text-orange-800'
+                : 'bg-yellow-100 text-yellow-800';
+              return (
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">#{order.orderNumber as string}</p>
+                    <p className="text-sm text-gray-600">${((order.pricing as Record<string, number>)?.total || 0).toFixed(2)}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${orderStatusColor}`}>
+                    {String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                  order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>{order.status as string}</span>
-              </div>
-            )) : <p className="text-gray-500">No orders yet</p>}
+              );
+            }) : <p className="text-gray-500">No orders yet</p>}
           </div>
         </div>
       </div>
@@ -303,24 +309,37 @@ export default function Admin() {
             const user = order.userId as Record<string, string> | undefined;
             const pricing = order.pricing as Record<string, number> | undefined;
             const items = (order.items || []) as Array<Record<string, unknown>>;
+            const statusColor = (order.status as string) === 'delivered' ? 'bg-green-100 text-green-800 border-green-200'
+              : (order.status as string) === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200'
+              : (order.status as string) === 'shipped' ? 'bg-blue-100 text-blue-800 border-blue-200'
+              : (order.status as string) === 'confirmed' ? 'bg-purple-100 text-purple-800 border-purple-200'
+              : (order.status as string) === 'processing' ? 'bg-orange-100 text-orange-800 border-orange-200'
+              : 'bg-yellow-100 text-yellow-800 border-yellow-200';
             return (
               <div key={i} className="border rounded-lg p-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-gray-900">#{order.orderNumber as string}</p>
+                    <div className="flex items-center space-x-3 mb-1">
+                      <p className="font-semibold text-gray-900">#{order.orderNumber as string}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}>
+                        {(order.status as string).charAt(0).toUpperCase() + (order.status as string).slice(1)}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600">Customer: {user?.name || 'Unknown'} ({user?.email || ''})</p>
                     <p className="text-sm text-gray-600">{items.length} item(s) — Total: ${pricing?.total?.toFixed(2) || '0.00'}</p>
                     <p className="text-xs text-gray-500 mt-1">{new Date(order.createdAt as string).toLocaleDateString()}</p>
                   </div>
-                  <select value={order.status as string} onChange={(e) => updateOrderStatus(order._id as string, e.target.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${order.status === 'delivered' ? 'bg-green-100 text-green-800 border-green-200' : order.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' : order.status === 'shipped' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
+                  <div className="flex flex-col items-end space-y-2">
+                    <select value={order.status as string} onChange={(e) => updateOrderStatus(order._id as string, e.target.value)}
+                      className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+                      <option value="pending">Change to: Pending</option>
+                      <option value="confirmed">Change to: Confirmed</option>
+                      <option value="processing">Change to: Processing</option>
+                      <option value="shipped">Change to: Shipped</option>
+                      <option value="delivered">Change to: Delivered</option>
+                      <option value="cancelled">Change to: Cancelled</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             );
