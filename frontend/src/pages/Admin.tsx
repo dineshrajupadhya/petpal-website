@@ -30,14 +30,14 @@ export default function Admin() {
   }
 
   const stats = dashboardData ? [
-    { icon: Users, label: 'Total Users', value: (dashboardData.stats as Record<string, number>)?.users || 0 },
-    { icon: Heart, label: 'Total Pets', value: (dashboardData.stats as Record<string, number>)?.pets || 0 },
-    { icon: ShoppingBag, label: 'Total Orders', value: (dashboardData.stats as Record<string, number>)?.orders || 0 },
-    { icon: MessageCircle, label: 'Active Chats', value: (dashboardData.stats as Record<string, number>)?.chats || 0 },
+    { icon: Users, label: 'Total Users', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.users?.total) ?? 0 },
+    { icon: Heart, label: 'Total Pets', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.pets?.total) ?? 0 },
+    { icon: ShoppingBag, label: 'Total Orders', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.orders?.total) ?? 0 },
+    { icon: MessageCircle, label: 'Active Chats', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.chats?.total) ?? 0 },
   ] : [];
 
-  const recentOrders = (dashboardData?.recentOrders || []) as Array<Record<string, unknown>>;
-  const recentUsers = (dashboardData?.recentUsers || []) as Array<Record<string, unknown>>;
+  const recentOrders = ((dashboardData as Record<string, Record<string, unknown>>)?.recentActivity?.orders || []) as Array<Record<string, unknown>>;
+  const recentUsers = ((dashboardData as Record<string, Record<string, unknown>>)?.recentActivity?.users || []) as Array<Record<string, unknown>>;
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Users },
