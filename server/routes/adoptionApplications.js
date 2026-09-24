@@ -50,14 +50,14 @@ router.get('/my', authenticateToken, async (req, res) => {
 router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { status, limit = 50 } = req.query;
-    const filter: Record<string, unknown> = {};
+    const filter = {};
     if (status) filter.status = status;
 
     const applications = await AdoptionApplication.find(filter)
       .populate('petId', 'name species breed images adoptionFee')
       .populate('userId', 'name email')
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit as string));
+      .limit(parseInt(limit));
 
     const stats = await AdoptionApplication.aggregate([
       { $group: { _id: '$status', count: { $sum: 1 } } }
