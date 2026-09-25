@@ -3,6 +3,9 @@ name: Rearm Test
 on:
   workflow_dispatch:
 
+permissions:
+  actions: write
+
 jobs:
   test-dispatch:
     runs-on: ubuntu-latest
