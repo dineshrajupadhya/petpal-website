@@ -45,9 +45,11 @@ const orderSchema = new mongoose.Schema({
     sameAsShipping: { type: Boolean, default: true }
   },
   payment: {
-    method: { type: String, enum: ['card', 'paypal', 'bank_transfer'], required: true },
+    method: { type: String, enum: ['cod', 'razorpay', 'card', 'paypal', 'bank_transfer'], required: true },
     status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'pending' },
     transactionId: String,
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
     paidAt: Date
   },
   status: {

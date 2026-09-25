@@ -39,6 +39,31 @@ export const authAPI = {
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put('/auth/change-password', data),
   logout: () => api.post('/auth/logout'),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) => api.post('/auth/reset-password', { token, password }),
+};
+
+export const paymentsAPI = {
+  config: () => api.get('/payments/config'),
+  createRazorpayOrder: (orderId: string) => api.post('/payments/razorpay/order', { orderId }),
+  verifyRazorpay: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    api.post('/payments/razorpay/verify', data),
+};
+
+export const assetsAPI = {
+  upload: (file: File) => {
+    const fd = new FormData();
+    fd.append('image', file);
+    return api.post('/assets', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 });
+  },
+};
+
+export const contactAPI = {
+  send: (data: { name: string; email: string; message: string }) => api.post('/contact', data),
+};
+
+export const analyticsAPI = {
+  track: (path: string) => api.post('/analytics/track', { path }),
 };
 
 export const petsAPI = {
@@ -123,6 +148,7 @@ export const adminAPI = {
     api.put(`/admin/users/${id}/status`, data),
   sales: (period?: string) => api.get('/admin/analytics/sales', { params: { period } }),
   health: () => api.get('/admin/system/health'),
+  emails: () => api.get('/admin/emails'),
 };
 
 export default api;

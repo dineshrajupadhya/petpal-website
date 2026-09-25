@@ -42,6 +42,12 @@ export default function Footer() {
               <Link to="/chat" className="block text-gray-300 hover:text-white transition-colors">
                 Support Chat
               </Link>
+              <Link to="/about" className="block text-gray-300 hover:text-white transition-colors">
+                About Us
+              </Link>
+              <Link to="/contact" className="block text-gray-300 hover:text-white transition-colors">
+                Contact Us
+              </Link>
             </div>
           </div>
 
@@ -63,7 +69,7 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">+1 (555) 123-4567</span>
+                <span className="text-gray-300">+91 98765 43210</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-blue-400" />
@@ -71,7 +77,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">123 Pet Street, Animal City, PC 12345</span>
+                <span className="text-gray-300">123 Pet Street, Mumbai, MH 400001</span>
               </div>
             </div>
           </div>
@@ -82,12 +88,15 @@ export default function Footer() {
             <p className="text-gray-400 text-sm">
               © 2024 PetPal. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0 justify-center md:justify-end">
               <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
               <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Terms of Service
+              </Link>
+              <Link to="/refund" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Refund Policy
               </Link>
             </div>
           </div>

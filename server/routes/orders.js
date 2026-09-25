@@ -3,8 +3,13 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Pet from '../models/Pet.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { sendEmail, templates } from '../services/email.js';
 
 const router = express.Router();
+
+const GST_RATE = parseFloat(process.env.GST_RATE || '0.18');
+const FREE_SHIPPING_OVER = parseFloat(process.env.FREE_SHIPPING_OVER || '2999');
+const SHIPPING_FLAT = parseFloat(process.env.SHIPPING_FLAT || '49');
 
 // Admin: Get all orders
 router.get('/admin/all', requireAdmin, async (req, res) => {
@@ -157,10 +162,14 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Calculate tax and shipping
-    const tax = subtotal * 0.08;
-    const shipping = subtotal >= 35 ? 0 : 9.99;
+    // Calculate tax and shipping (INR)
+    const tax = subtotal * GST_RATE;
+    const shipping = subtotal >= FREE_SHIPPING_OVER ? 0 : SHIPPING_FLAT;
     const total = subtotal + tax + shipping;
+
+    // Validate payment method
+    const allowedMethods = ['cod', 'razorpay', 'card'];
+    const finalMethod = allowedMethods.includes(paymentMethod) ? paymentMethod : 'cod';
 
     // Generate order number
     const count = await Order.countDocuments();
@@ -180,12 +189,18 @@ router.post('/', async (req, res) => {
       shippingAddress,
       billingAddress: billingAddress || { ...shippingAddress, sameAsShipping: true },
       payment: {
-        method: paymentMethod,
+        method: finalMethod,
         status: 'pending'
       }
     });
 
     await order.save();
+
+    // Send order confirmation email (non-blocking)
+    if (req.user?.email) {
+      const mail = templates.orderConfirmation(order);
+      sendEmail({ to: req.user.email, subject: mail.subject, html: mail.html, type: 'order_confirmation' }).catch(() => {});
+    }
 
     // Update inventory for products
     for (const item of items) {
@@ -281,6 +296,13 @@ router.put('/:id/status', requireAdmin, async (req, res) => {
       note,
       updatedBy: req.user._id
     });
+
+    // COD: mark payment completed when delivered
+    if (status === 'delivered' && order.payment.method === 'cod' && order.payment.status !== 'completed') {
+      order.payment.status = 'completed';
+      order.payment.paidAt = new Date();
+      order.payment.transactionId = `COD-${order.orderNumber}`;
+    }
 
     if (trackingNumber) {
       order.tracking.trackingNumber = trackingNumber;

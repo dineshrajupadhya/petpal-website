@@ -5,12 +5,24 @@ import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import Chat from '../models/Chat.js';
 import Disease from '../models/Disease.js';
+import EmailLog from '../models/EmailLog.js';
+import Analytics from '../models/Analytics.js';
 import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Apply admin middleware to all routes
 router.use(requireAdmin);
+
+// Email outbox
+router.get('/emails', async (req, res) => {
+  try {
+    const emails = await EmailLog.find().sort({ createdAt: -1 }).limit(50);
+    res.json({ emails });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch emails', error: error.message });
+  }
+});
 
 // Dashboard statistics
 router.get('/dashboard', async (req, res) => {
@@ -94,13 +106,27 @@ router.get('/dashboard', async (req, res) => {
       .limit(5)
       .select('userId status priority lastActivity');
 
+    // Analytics (page views)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const viewAgg = await Analytics.aggregate([
+      { $match: { date: { $gte: thirtyDaysAgo } } },
+      { $group: { _id: null, total: { $sum: '$views' } } }
+    ]);
+    const topPaths = await Analytics.aggregate([
+      { $match: { date: { $gte: thirtyDaysAgo } } },
+      { $group: { _id: '$path', views: { $sum: '$views' } } },
+      { $sort: { views: -1 } },
+      { $limit: 5 }
+    ]);
+
     res.json({
       stats: {
         users: userStats[0] || { total: 0, active: 0, admins: 0 },
         pets: petStats[0] || { total: 0, available: 0, adopted: 0, pending: 0 },
         products: productStats[0] || { total: 0, active: 0, lowStock: 0 },
         orders: orderStats[0] || { total: 0, pending: 0, completed: 0, revenue: 0 },
-        chats: chatStats[0] || { total: 0, active: 0, resolved: 0 }
+        chats: chatStats[0] || { total: 0, active: 0, resolved: 0 },
+        analytics: { pageViews: viewAgg[0]?.total || 0, topPaths }
       },
       recentActivity: {
         orders: recentOrders,

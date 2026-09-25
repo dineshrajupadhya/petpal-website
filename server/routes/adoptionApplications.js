@@ -2,6 +2,7 @@ import express from 'express';
 import AdoptionApplication from '../models/AdoptionApplication.js';
 import Pet from '../models/Pet.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { sendEmail, templates } from '../services/email.js';
 
 const router = express.Router();
 
@@ -27,6 +28,12 @@ router.post('/', authenticateToken, async (req, res) => {
       references,
       agreement
     });
+
+    // Confirmation email (non-blocking)
+    if (req.user?.email) {
+      const mail = templates.adoptionSubmitted(req.user.name || personalInfo?.fullName || 'there', pet.name);
+      sendEmail({ to: req.user.email, subject: mail.subject, html: mail.html, type: 'adoption_application' }).catch(() => {});
+    }
 
     res.status(201).json({ message: 'Application submitted successfully', application });
   } catch (error) {

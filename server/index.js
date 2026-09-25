@@ -17,6 +17,10 @@ import chatRoutes from './routes/chat.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import adoptionApplicationRoutes from './routes/adoptionApplications.js';
+import assetRoutes from './routes/assets.js';
+import paymentRoutes from './routes/payments.js';
+import analyticsRoutes from './routes/analytics.js';
+import contactRoutes from './routes/contact.js';
 
 import { authenticateToken } from './middleware/auth.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
@@ -43,12 +47,16 @@ connectDB()
   });
 
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100
+  max: 500,
+  skip: (req) =>
+    req.path.startsWith('/api/assets') ||
+    req.path === '/api/health' ||
+    req.path.startsWith('/api/analytics')
 });
 app.use(limiter);
 
@@ -74,6 +82,10 @@ app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/adoption-applications', adoptionApplicationRoutes);
+app.use('/api/assets', assetRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/contact', contactRoutes);
 
 
 app.get('/api/health', (req, res) => {

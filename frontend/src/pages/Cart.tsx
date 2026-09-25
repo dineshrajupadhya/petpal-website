@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { ordersAPI } from '../services/api';
 
 export default function Cart() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
-  const [checkingOut, setCheckingOut] = useState(false);
 
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity <= 0) dispatch({ type: 'REMOVE_FROM_CART', payload: id });
@@ -21,40 +19,16 @@ export default function Cart() {
   };
 
   const subtotal = state.cart.reduce((total, cartItem) => total + (getItemPrice(cartItem.item as Record<string, unknown>) * cartItem.quantity), 0);
-  const shipping = subtotal > 35 ? 0 : 9.99;
-  const tax = subtotal * 0.08;
+  const shipping = subtotal >= 2999 ? 0 : 49;
+  const tax = subtotal * 0.18;
   const total = subtotal + shipping + tax;
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!state.user) {
       navigate('/login');
       return;
     }
-    setCheckingOut(true);
-    try {
-      const items = state.cart.map(ci => ({
-        itemId: ci.id,
-        itemType: ci.type as 'product' | 'pet',
-        quantity: ci.quantity,
-      }));
-      await ordersAPI.create({
-        items,
-        shippingAddress: {
-          name: state.user.name,
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
-          country: 'USA',
-        },
-        paymentMethod: 'card',
-      });
-      dispatch({ type: 'CLEAR_CART' });
-      navigate('/profile');
-    } catch {
-    } finally {
-      setCheckingOut(false);
-    }
+    navigate('/checkout');
   };
 
   if (state.cart.length === 0) {
@@ -123,7 +97,7 @@ export default function Cart() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">₹{subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="font-medium">{shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}</span></div>
-                <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">₹{tax.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">GST (18%)</span><span className="font-medium">₹{tax.toFixed(2)}</span></div>
                 <div className="border-t pt-4">
                   <div className="flex justify-between"><span className="text-lg font-semibold text-gray-900">Total</span><span className="text-lg font-semibold text-gray-900">₹{total.toFixed(2)}</span></div>
                 </div>
@@ -133,10 +107,10 @@ export default function Cart() {
                   <p className="text-blue-800 text-sm">Add ₹{(2999 - subtotal).toFixed(2)} more to get free shipping!</p>
                 </div>
               )}
-              <button onClick={handleCheckout} disabled={checkingOut}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2 mb-4 disabled:opacity-50">
-                <span>{checkingOut ? 'Processing...' : (state.user ? 'Proceed to Checkout' : 'Login to Checkout')}</span>
-                {!checkingOut && <ArrowRight className="w-5 h-5" />}
+              <button onClick={handleCheckout}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2 mb-4">
+                <span>{state.user ? 'Proceed to Checkout' : 'Login to Checkout'}</span>
+                <ArrowRight className="w-5 h-5" />
               </button>
               <div className="text-center">
                 <Link to="/store" className="text-blue-600 hover:text-blue-700 transition-colors text-sm">Continue Shopping</Link>

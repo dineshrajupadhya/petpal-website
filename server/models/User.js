@@ -58,7 +58,9 @@ const userSchema = new mongoose.Schema({
     itemId: mongoose.Schema.Types.ObjectId,
     itemType: { type: String, enum: ['pet', 'product'] },
     addedAt: { type: Date, default: Date.now }
-  }]
+  }],
+  passwordResetToken: { type: String, select: false },
+  passwordResetExpires: { type: Date, select: false }
 }, {
   timestamps: true
 });

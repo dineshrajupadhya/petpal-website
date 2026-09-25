@@ -1,9 +1,18 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sendEmail, templates, smtpConfigured } from '../services/email.js';
 
 const router = express.Router();
+
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Too many attempts. Please try again later.' }
+});
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -36,6 +45,10 @@ router.post('/register', async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
+
+    // Send welcome email (non-blocking)
+    const welcome = templates.welcome(user.name);
+    sendEmail({ to: user.email, subject: welcome.subject, html: welcome.html, type: 'welcome' }).catch(() => {});
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -160,6 +173,63 @@ router.put('/change-password', authenticateToken, async (req, res) => {
       message: 'Password change failed', 
       error: error.message 
     });
+  }
+});
+
+// Forgot password
+router.post('/forgot-password', resetLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    const response = { message: 'If an account with that email exists, reset instructions have been sent.' };
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await user.save({ validateBeforeSave: false });
+
+      const resetUrl = `${process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+      const mail = templates.passwordReset(user.name, resetUrl);
+      const result = await sendEmail({ to: user.email, subject: mail.subject, html: mail.html, type: 'password_reset' });
+
+      // If SMTP not configured (outbox mode), expose link so flow is usable in demo
+      if (result.queued) response.resetLink = resetUrl;
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ message: 'Token and password are required' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
+    const hashed = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      passwordResetToken: hashed,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) return res.status(400).json({ message: 'Invalid or expired reset link. Please request a new one.' });
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successful. You can now sign in.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Something went wrong. Please try again.' });
   }
 });
 

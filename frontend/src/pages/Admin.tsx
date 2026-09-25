@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Heart, ShoppingBag, MessageCircle, Plus, Trash2, X, FileText } from 'lucide-react';
+import { Users, Heart, ShoppingBag, Plus, Trash2, X, FileText, Mail, Eye, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { adminAPI, petsAPI, productsAPI, ordersAPI, adoptionAPI } from '../services/api';
+import { adminAPI, petsAPI, productsAPI, ordersAPI, adoptionAPI, assetsAPI } from '../services/api';
 
 export default function Admin() {
   const { state } = useApp();
@@ -13,6 +13,7 @@ export default function Admin() {
   const [products, setProducts] = useState<Array<Record<string, unknown>>>([]);
   const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [adoptionApps, setAdoptionApps] = useState<Array<Record<string, unknown>>>([]);
+  const [emails, setEmails] = useState<Array<Record<string, unknown>>>([]);
   const [tabLoading, setTabLoading] = useState(false);
 
   const [showPetModal, setShowPetModal] = useState(false);
@@ -49,6 +50,11 @@ export default function Admin() {
     } else if (tab === 'adoptions') {
       adoptionAPI.adminAll({ limit: 50 })
         .then(res => setAdoptionApps(res.data.applications || []))
+        .catch(() => {})
+        .finally(() => setTabLoading(false));
+    } else if (tab === 'emails') {
+      adminAPI.emails()
+        .then(res => setEmails(res.data.emails || []))
         .catch(() => {})
         .finally(() => setTabLoading(false));
     } else {
@@ -127,6 +133,33 @@ export default function Admin() {
     } catch { alert('Failed to update application status'); }
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const res = await assetsAPI.upload(file);
+      return res.data.url as string;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      alert(msg);
+      return null;
+    }
+  };
+
+  const handlePetImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await uploadImage(file);
+    if (url) setPetForm(prev => ({ ...prev, image: url }));
+    e.target.value = '';
+  };
+
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await uploadImage(file);
+    if (url) setProductForm(prev => ({ ...prev, image: url }));
+    e.target.value = '';
+  };
+
   if (!state.user?.isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
@@ -142,8 +175,10 @@ export default function Admin() {
     { icon: Users, label: 'Total Users', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.users?.total) ?? 0 },
     { icon: Heart, label: 'Total Pets', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.pets?.total) ?? 0 },
     { icon: ShoppingBag, label: 'Total Orders', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.orders?.total) ?? 0 },
-    { icon: MessageCircle, label: 'Active Chats', value: ((dashboardData.stats as Record<string, Record<string, number>>)?.chats?.total) ?? 0 },
+    { icon: Eye, label: 'Page Views (30d)', value: ((dashboardData.stats as Record<string, Record<string, unknown>>)?.analytics?.pageViews) ?? 0 },
   ] : [];
+
+  const topPaths = ((dashboardData as Record<string, Record<string, unknown>>)?.stats as Record<string, { topPaths?: Array<{ _id: string; views: number }> }>)?.analytics?.topPaths || [];
 
   const recentOrders = ((dashboardData as Record<string, Record<string, unknown>>)?.recentActivity?.orders || []) as Array<Record<string, unknown>>;
   const recentUsers = ((dashboardData as Record<string, Record<string, unknown>>)?.recentActivity?.users || []) as Array<Record<string, unknown>>;
@@ -154,6 +189,7 @@ export default function Admin() {
     { id: 'products', label: 'Products', icon: ShoppingBag },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'adoptions', label: 'Applications', icon: FileText },
+    { id: 'emails', label: 'Email Outbox', icon: Mail },
   ];
 
   const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm";
@@ -213,6 +249,17 @@ export default function Admin() {
                 </div>
               );
             }) : <p className="text-gray-500">No orders yet</p>}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Pages (30d)</h3>
+          <div className="space-y-3">
+            {topPaths.length > 0 ? topPaths.map((p, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">{p._id}</span>
+                <span className="text-sm font-semibold text-blue-600">{p.views} views</span>
+              </div>
+            )) : <p className="text-gray-500 text-sm">No page views yet</p>}
           </div>
         </div>
       </div>
@@ -424,6 +471,43 @@ export default function Admin() {
     );
   };
 
+  const renderEmails = () => {
+    const statusColor = (s: string) => s === 'sent' ? 'bg-green-100 text-green-800 border-green-200'
+      : s === 'failed' ? 'bg-red-100 text-red-800 border-red-200'
+      : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-2xl font-bold text-gray-900">Email Outbox</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-6">All outgoing emails are logged here. "Queued" emails are waiting for SMTP configuration (Settings → Environment on Render).</p>
+        {tabLoading ? (
+          <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />)}</div>
+        ) : emails.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No emails yet</p>
+        ) : (
+          <div className="space-y-3">
+            {emails.map((mail, i) => (
+              <div key={i} className="border rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColor(mail.status as string)}`}>{mail.status as string}</span>
+                      <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full">{mail.type as string}</span>
+                    </div>
+                    <p className="font-medium text-gray-900 mt-1 truncate">{mail.subject as string}</p>
+                    <p className="text-sm text-gray-600 truncate">To: {mail.to as string}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(mail.createdAt as string).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -454,6 +538,7 @@ export default function Admin() {
                 {activeTab === 'products' && renderProducts()}
                 {activeTab === 'orders' && renderOrders()}
                 {activeTab === 'adoptions' && renderAdoptions()}
+                {activeTab === 'emails' && renderEmails()}
               </>
             )}
           </div>
@@ -478,7 +563,17 @@ export default function Admin() {
               <div><label className={labelClass}>Weight</label><input className={inputClass} value={petForm.weight} onChange={e => setPetForm({...petForm, weight: e.target.value})} placeholder="e.g. 25 lbs" /></div>
               <div><label className={labelClass}>Color</label><input className={inputClass} value={petForm.color} onChange={e => setPetForm({...petForm, color: e.target.value})} /></div>
               <div><label className={labelClass}>Adoption Fee (₹)</label><input type="number" className={inputClass} value={petForm.adoptionFee} onChange={e => setPetForm({...petForm, adoptionFee: e.target.value})} /></div>
-              <div><label className={labelClass}>Image URL</label><input className={inputClass} value={petForm.image} onChange={e => setPetForm({...petForm, image: e.target.value})} placeholder="https://..." /></div>
+              <div className="col-span-2">
+                <label className={labelClass}>Image</label>
+                <div className="flex gap-2">
+                  <input className={inputClass} value={petForm.image} onChange={e => setPetForm({...petForm, image: e.target.value})} placeholder="https://... or upload below" />
+                  <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center space-x-1 text-sm whitespace-nowrap">
+                    <Upload className="w-4 h-4" /><span>Upload</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePetImageUpload} />
+                  </label>
+                </div>
+                {petForm.image && <img src={petForm.image} alt="preview" className="mt-2 h-20 rounded-lg object-cover" />}
+              </div>
               <div className="col-span-2"><label className={labelClass}>Description</label><textarea className={inputClass} rows={3} value={petForm.description} onChange={e => setPetForm({...petForm, description: e.target.value})} /></div>
               <div><label className={labelClass}>Shelter</label><input className={inputClass} value={petForm.shelter} onChange={e => setPetForm({...petForm, shelter: e.target.value})} /></div>
               <div><label className={labelClass}>City</label><input className={inputClass} value={petForm.city} onChange={e => setPetForm({...petForm, city: e.target.value})} /></div>
@@ -515,7 +610,17 @@ export default function Admin() {
               <div><label className={labelClass}>Price (₹) *</label><input type="number" className={inputClass} value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} /></div>
               <div><label className={labelClass}>Original Price (₹)</label><input type="number" className={inputClass} value={productForm.originalPrice} onChange={e => setProductForm({...productForm, originalPrice: e.target.value})} /></div>
               <div><label className={labelClass}>Stock *</label><input type="number" className={inputClass} value={productForm.stock} onChange={e => setProductForm({...productForm, stock: e.target.value})} /></div>
-              <div><label className={labelClass}>Image URL</label><input className={inputClass} value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} placeholder="https://..." /></div>
+              <div className="col-span-2">
+                <label className={labelClass}>Image</label>
+                <div className="flex gap-2">
+                  <input className={inputClass} value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} placeholder="https://... or upload below" />
+                  <label className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center space-x-1 text-sm whitespace-nowrap">
+                    <Upload className="w-4 h-4" /><span>Upload</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
+                  </label>
+                </div>
+                {productForm.image && <img src={productForm.image} alt="preview" className="mt-2 h-20 rounded-lg object-cover" />}
+              </div>
               <div className="col-span-2"><label className={labelClass}>Description *</label><textarea className={inputClass} rows={3} value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} /></div>
               <div className="col-span-2"><label className={labelClass}>Features (comma separated)</label><input className={inputClass} value={productForm.features} onChange={e => setProductForm({...productForm, features: e.target.value})} placeholder="Feature 1, Feature 2, Feature 3" /></div>
             </div>
