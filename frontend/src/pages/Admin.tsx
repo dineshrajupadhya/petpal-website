@@ -427,7 +427,6 @@ export default function Admin() {
           <div className="space-y-4">
             {adoptionApps.map((app, i) => {
               const pet = app.petId as Record<string, unknown> | undefined;
-              const user = app.userId as Record<string, unknown> | undefined;
               const personal = (app.personalInfo || {}) as Record<string, unknown>;
               const housing = (app.housing || {}) as Record<string, unknown>;
               const experience = (app.experience || {}) as Record<string, unknown>;

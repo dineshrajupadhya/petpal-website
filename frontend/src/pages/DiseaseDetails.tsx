@@ -46,7 +46,6 @@ export default function DiseaseDetails() {
   const symptoms = (d.symptoms || []) as Array<{ name: string; description?: string }>;
   const causes = (d.causes || []) as string[];
   const transmission = (d.transmission || []) as string[];
-  const diagnosis = (d.diagnosis || []) as Array<{ method?: string; description?: string }>;
   const treatment = (d.treatment || {}) as { immediate?: string[]; medication?: Array<Record<string, string>>; procedures?: string[]; homecare?: string[] };
   const prevention = (d.prevention || []) as string[];
   const whenToSeeVet = (d.whenToSeeVet || []) as string[];

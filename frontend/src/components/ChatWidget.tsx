@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { chatAPI } from '../services/api';
 
 export default function ChatWidget() {
-  const { state, dispatch } = useApp();
+  const { state } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);

@@ -9,7 +9,7 @@ export default function Profile() {
   const [profileData, setProfileData] = useState({ name: '', email: '', phone: '', address: '' });
   const [orderHistory, setOrderHistory] = useState<Array<Record<string, unknown>>>([]);
   const [adoptionHistory, setAdoptionHistory] = useState<Array<Record<string, unknown>>>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     if (!state.user) { setLoading(false); return; }

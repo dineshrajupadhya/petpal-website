@@ -41,8 +41,6 @@ export default function Diseases() {
       .finally(() => setLoading(false));
   }, []);
 
-  const allSymptoms = [...new Set(diseases.flatMap(d => d.symptoms))].sort();
-
   useEffect(() => {
     let filtered = diseases;
     if (searchTerm) {
