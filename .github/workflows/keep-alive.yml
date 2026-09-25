@@ -4,12 +4,40 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'once = single ping, loop = ping every 10 min for ~5h50m then re-arm'
+        type: choice
+        options: [once, loop]
+        default: loop
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
-      - name: Ping Render backend
+      - name: Ping Render
         run: |
-          curl -sS --max-time 60 --retry 3 --retry-delay 10 \
-            https://petpal-api-ejwx.onrender.com/api/health || true
+          echo "ping at $(date -u)"
+          curl -sS --max-time 60 https://petpal-api-ejwx.onrender.com/api/health || echo "ping failed"
+
+      - name: Keep pinging every 10 min for ~5h50m
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'loop' }}
+        run: |
+          for i in $(seq 2 35); do
+            sleep 600
+            echo "ping $i at $(date -u)"
+            curl -sS --max-time 60 https://petpal-api-ejwx.onrender.com/api/health || echo "ping failed"
+          done
+
+      - name: Re-arm next cycle
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'loop' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run keep-alive.yml --repo "$GITHUB_REPOSITORY" -f mode=loop
+          echo "Re-armed next keep-alive cycle"
