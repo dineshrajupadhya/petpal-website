@@ -40,7 +40,7 @@ export default function Chat() {
   }, [state.user, sessionId, dispatch]);
 
   const sendMessage = async () => {
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || !state.user) return;
 
     const userMessage = inputMessage;
     setInputMessage('');
@@ -95,7 +95,7 @@ export default function Chat() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-blue-600" />
-                  <div><div className="font-medium text-gray-900">Phone</div><div className="text-sm text-gray-600">(555) 123-4567</div></div>
+                  <div><div className="font-medium text-gray-900">Phone</div><div className="text-sm text-gray-600">+91 98765 43210</div></div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-blue-600" />
@@ -108,6 +108,7 @@ export default function Chat() {
               </div>
             </div>
 
+            {state.user && (
             <div className="bg-blue-50 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-blue-900 mb-3">Quick Actions</h3>
               <div className="space-y-2">
@@ -118,6 +119,7 @@ export default function Chat() {
                 ))}
               </div>
             </div>
+            )}
           </div>
 
           <div className="lg:col-span-3">
@@ -176,15 +178,22 @@ export default function Chat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="border-t p-4">
-                <div className="flex space-x-4">
-                  <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                  <button onClick={sendMessage} disabled={!inputMessage.trim()} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                    <Send className="w-5 h-5" />
-                  </button>
+              {state.user ? (
+                <div className="border-t p-4">
+                  <div className="flex space-x-4">
+                    <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <button onClick={sendMessage} disabled={!inputMessage.trim()} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="border-t p-4 text-center">
+                  <p className="text-sm text-gray-600 mb-2">Log in to chat with our AI assistant</p>
+                  <a href="/login" className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">Log In</a>
+                </div>
+              )}
             </div>
           </div>
         </div>

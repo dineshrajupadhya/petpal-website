@@ -25,6 +25,7 @@ import Privacy from './pages/Privacy';
 import RefundPolicy from './pages/RefundPolicy';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import NotFound from './pages/NotFound';
 import { analyticsAPI } from './services/api';
 
 const PAGE_META: Record<string, { title: string; desc: string }> = {
@@ -35,6 +36,7 @@ const PAGE_META: Record<string, { title: string; desc: string }> = {
   '/chat': { title: 'AI Pet Care Assistant | PetPal', desc: 'Chat with our AI assistant for instant answers about pet care, nutrition and health.' },
   '/about': { title: 'About PetPal', desc: 'Learn about PetPal — India\'s complete platform for pet adoption, supplies and care.' },
   '/contact': { title: 'Contact PetPal', desc: 'Get in touch with the PetPal team. We respond within 1 business day.' },
+  '/404': { title: 'Page Not Found | PetPal', desc: 'The page you are looking for does not exist.' },
   '/terms': { title: 'Terms of Service | PetPal', desc: 'PetPal terms of service.' },
   '/privacy': { title: 'Privacy Policy | PetPal', desc: 'How PetPal collects, uses and protects your data.' },
   '/refund': { title: 'Refund & Return Policy | PetPal', desc: 'Return and refund rules for PetPal orders and adoption fees.' },
@@ -112,6 +114,7 @@ function App() {
               <Route path="/refund" element={<RefundPolicy />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />
